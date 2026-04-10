@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GO-Hub — GOPIZZA Dashboard Hub</title>
+  <style>
+    :root {
+      --orange:#FA4616; --black:#222222; --gray-dark:#444444;
+      --gray-mid:#888888; --gray-light:#F7F7F7; --border:#E0E0E0;
+      --white:#FFFFFF; --green:#325627; --red:#C62828;
+      --font:Arial,sans-serif; --tr:0.18s ease;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--white);color:var(--black);font-family:var(--font);font-size:10pt;line-height:1.6;-webkit-font-smoothing:antialiased;}
+    a{text-decoration:none;color:inherit;}
+
+    /* ── HEADER ── */
+    header{position:sticky;top:0;z-index:200;background:var(--white);border-bottom:3px solid var(--orange);box-shadow:0 1px 0 var(--border);}
+    .hi{max-width:1160px;margin:0 auto;padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .lg{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+    .lb{background:var(--orange);color:var(--white);font-size:10pt;font-weight:700;letter-spacing:.08em;padding:4px 10px;border-radius:3px;}
+    .lt{font-size:13pt;font-weight:700;color:var(--black);}
+    .ls{font-size:8.5pt;color:var(--gray-mid);font-style:italic;margin-top:1px;}
+    .hright{display:flex;align-items:center;gap:8px;}
+    .mp{font-size:8.5pt;color:var(--gray-mid);background:var(--gray-light);border:1px solid var(--border);padding:3px 12px;border-radius:2px;white-space:nowrap;}
+
+    /* Language toggle */
+    .lang-toggle{
+      display:flex;align-items:center;
+      border:1px solid var(--border);border-radius:4px;overflow:hidden;
+      flex-shrink:0;
+    }
+    .lang-btn{
+      background:var(--white);border:none;
+      font-family:var(--font);font-size:8.5pt;font-weight:700;
+      padding:5px 11px;cursor:pointer;color:var(--gray-mid);
+      transition:background var(--tr),color var(--tr);
+      letter-spacing:.04em;
+    }
+    .lang-btn.active{background:var(--orange);color:var(--white);}
+    .lang-sep{width:1px;background:var(--border);align-self:stretch;}
+
+    /* Register button */
+    .btn-reg-header{
+      display:flex;align-items:center;gap:6px;
+      background:var(--orange);color:var(--white);
+      font-family:var(--font);font-size:9pt;font-weight:700;
+      border:none;border-radius:3px;padding:7px 14px;
+      cursor:pointer;transition:opacity var(--tr);white-space:nowrap;flex-shrink:0;
+    }
+    .btn-reg-header:hover{opacity:.88;}
+
+    /* ── PAGE ── */
+    .page{max-width:1160px;margin:0 auto;padding:0 32px 64px;}
+
+    /* ── HERO ── */
+    .hero{padding:44px 0 28px;border-bottom:1px solid var(--border);margin-bottom:28px;}
+    .ey{display:flex;align-items:center;gap:10px;font-size:8.5pt;color:var(--gray-mid);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
+    .ey::before{content:'';display:block;width:24px;height:2px;background:var(--orange);}
+    .hero h1{font-size:22pt;font-weight:700;color:var(--orange);letter-spacing:-.02em;line-height:1.1;}
+    .hd{margin-top:8px;font-size:10pt;color:var(--gray-dark);max-width:580px;}
+
+    /* ── KPI ── */
+    .ks{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:32px;}
+    .kc{background:var(--gray-light);padding:18px 20px;text-align:center;}
+    .kn{font-size:20pt;font-weight:700;color:var(--orange);line-height:1;display:block;}
+    .kl{display:block;font-size:7.5pt;color:var(--gray-mid);margin-top:5px;letter-spacing:.06em;text-transform:uppercase;}
+
+    /* ── CONTROLS ── */
+    .ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:28px;}
+    .sw{position:relative;flex:1;min-width:200px;max-width:300px;}
+    .sw svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-mid);pointer-events:none;}
+    .si{width:100%;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:8px 11px 8px 34px;font-family:var(--font);font-size:9pt;color:var(--black);outline:none;transition:border-color var(--tr);}
+    .si::placeholder{color:var(--gray-mid);}
+    .si:focus{border-color:var(--orange);}
+    .cps{display:flex;flex-wrap:wrap;gap:6px;}
+    .chip{padding:6px 14px;font-family:var(--font);font-size:9pt;border:1px solid var(--border);border-radius:4px;background:var(--white);color:var(--gray-dark);cursor:pointer;transition:all var(--tr);white-space:nowrap;}
+    .chip:hover{border-color:var(--orange);color:var(--orange);}
+    .chip.active{background:var(--orange);border-color:var(--orange);color:var(--white);font-weight:700;}
+    .ss{margin-left:auto;font-family:var(--font);font-size:9pt;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 12px;color:var(--gray-dark);outline:none;cursor:pointer;}
+
+    /* ── SECTION HEADING ── */
+    .sh{display:flex;align-items:baseline;gap:12px;margin:40px 0 16px;padding-bottom:10px;border-bottom:6px solid var(--orange);}
+    .sn{font-size:16pt;font-weight:700;color:var(--orange);line-height:1;min-width:32px;}
+    .st{font-size:14pt;font-weight:400;color:var(--black);letter-spacing:-.01em;}
+    .sc{font-size:8.5pt;color:var(--gray-mid);margin-left:auto;}
+
+    /* ── GRID & CARDS ── */
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+    .card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:20px 20px 16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;transition:box-shadow var(--tr),border-color var(--tr),transform var(--tr);animation:fi .3s both;}
+    @keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform var(--tr);border-radius:6px 0 0 6px;}
+    .card:hover{border-color:#ccc;box-shadow:0 4px 20px rgba(0,0,0,.12);transform:translateY(-2px);}
+    .card:hover::before{transform:scaleX(1);}
+    .ct{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+    .ci{font-size:1.4rem;line-height:1;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--gray-light);border:1px solid var(--border);border-radius:4px;flex-shrink:0;}
+    .card-actions{display:flex;align-items:center;gap:6px;}
+    .ca{color:var(--gray-mid);transition:transform var(--tr),color var(--tr);cursor:pointer;}
+    .card:hover .ca.arrow{transform:translate(3px,-3px);color:var(--orange);}
+    .btn-del{background:none;border:none;cursor:pointer;color:var(--gray-mid);padding:2px;border-radius:3px;display:flex;align-items:center;transition:color var(--tr),background var(--tr);}
+    .btn-del:hover{color:var(--red);background:rgba(198,40,40,.07);}
+    .cn{font-size:10pt;font-weight:700;color:var(--black);line-height:1.3;flex:1;cursor:pointer;}
+    .cn:hover{color:var(--orange);}
+    .cd{font-size:9pt;color:var(--gray-dark);line-height:1.55;flex:1;}
+    .cf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:8px;border-top:1px solid var(--border);margin-top:auto;}
+    .tag{font-size:8pt;padding:2px 8px;border-radius:2px;border:1px solid;}
+    .td{background:var(--gray-light);color:var(--gray-mid);border-color:var(--border);font-style:italic;}
+    .tu{background:rgba(250,70,22,.07);color:var(--orange);border-color:rgba(250,70,22,.2);font-size:7.5pt;font-weight:700;}
+
+    /* ── EMPTY STATE ── */
+    .empty-state{
+      grid-column:1/-1;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:72px 24px;text-align:center;
+      border:2px dashed var(--border);border-radius:6px;
+      background:var(--gray-light);
+    }
+    .empty-icon{font-size:2.4rem;margin-bottom:16px;opacity:.5;}
+    .empty-title{font-size:11pt;font-weight:700;color:var(--black);margin-bottom:6px;}
+    .empty-desc{font-size:9pt;color:var(--gray-mid);margin-bottom:20px;}
+    .btn-empty-reg{
+      display:inline-flex;align-items:center;gap:6px;
+      background:var(--orange);color:var(--white);
+      font-family:var(--font);font-size:9pt;font-weight:700;
+      border:none;border-radius:3px;padding:8px 18px;cursor:pointer;
+      transition:opacity var(--tr);
+    }
+    .btn-empty-reg:hover{opacity:.88;}
+
+    /* ── FOOTER ── */
+    footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+    .fl{font-size:8.5pt;color:var(--gray-mid);}
+    .fb{font-size:8pt;padding:4px 12px;border:1px dashed var(--border);border-radius:2px;color:var(--gray-mid);display:flex;align-items:center;gap:6px;}
+    .fbd{width:6px;height:6px;border-radius:50%;background:var(--orange);opacity:.4;}
+
+    /* ── MODAL ── */
+    .overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+    .overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:var(--white);border-radius:6px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);transform:translateY(16px);transition:transform .22s ease;overflow:hidden;}
+    .overlay.open .modal{transform:translateY(0);}
+    .modal-banner{background:var(--orange);color:var(--white);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+    .modal-banner-title{font-size:10pt;font-weight:700;letter-spacing:.04em;}
+    .modal-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.8);display:flex;align-items:center;transition:color var(--tr);}
+    .modal-close:hover{color:#fff;}
+    .modal-body{padding:24px;}
+    .form-row{margin-bottom:18px;}
+    .form-row:last-child{margin-bottom:0;}
+    .form-label{display:block;font-size:9pt;font-weight:700;color:var(--black);margin-bottom:6px;}
+    .form-label span{color:var(--orange);margin-left:2px;}
+    .form-input,.form-select{width:100%;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:9px 12px;font-family:var(--font);font-size:9pt;color:var(--black);outline:none;transition:border-color var(--tr);}
+    .form-input:focus,.form-select:focus{border-color:var(--orange);}
+    .form-input::placeholder{color:var(--gray-mid);}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+    .form-input.err,.form-select.err{border-color:var(--red);}
+    .form-errmsg{font-size:8pt;color:var(--red);margin-top:4px;}
+    .form-hint{font-size:8.5pt;color:var(--gray-mid);margin-top:5px;font-style:italic;}
+    .modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border);background:var(--gray-light);}
+    .btn-cancel{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:8px 18px;font-family:var(--font);font-size:9pt;color:var(--gray-dark);cursor:pointer;transition:border-color var(--tr),color var(--tr);}
+    .btn-cancel:hover{border-color:var(--gray-mid);color:var(--black);}
+    .btn-submit{background:var(--orange);border:1px solid var(--orange);border-radius:4px;padding:8px 20px;font-family:var(--font);font-size:9pt;font-weight:700;color:var(--white);cursor:pointer;transition:opacity var(--tr);}
+    .btn-submit:hover{opacity:.88;}
+
+    /* ── DELETE MODAL ── */
+    .del-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+    .del-overlay.open{opacity:1;pointer-events:all;}
+    .del-modal{background:var(--white);border-radius:6px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;transform:translateY(12px);transition:transform .2s ease;}
+    .del-overlay.open .del-modal{transform:translateY(0);}
+    .del-banner{background:var(--red);color:var(--white);padding:12px 20px;font-size:10pt;font-weight:700;}
+    .del-body{padding:20px;font-size:9pt;color:var(--gray-dark);}
+    .del-name{font-weight:700;color:var(--black);display:block;margin-top:6px;}
+    .del-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border);background:var(--gray-light);}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--black);color:var(--white);font-size:9pt;padding:10px 20px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:999;white-space:nowrap;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+    @media(max-width:680px){
+      .page,.hi{padding-left:16px;padding-right:16px;}
+      .hero{padding:28px 0 20px;}
+      .ss{margin-left:0;}
+      .form-row-2{grid-template-columns:1fr;}
+      .modal-body{padding:18px;}
+      .lt,.ls{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="hi">
+    <div class="lg">
+      <span class="lb">GOPIZZA</span>
+      <div>
+        <div class="lt">GO-Hub</div>
+        <div class="ls" data-i18n="header.sub"></div>
+      </div>
+    </div>
+    <div class="hright">
+      <span class="mp" id="nav-count">—</span>
+      <!-- Language toggle -->
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" id="btn-ko" onclick="setLang('ko')">KO</button>
+        <span class="lang-sep"></span>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="btn-reg-header" id="btn-open-modal">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <span data-i18n="header.register"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── PAGE ── -->
+<div class="page">
+
+  <div class="hero">
+    <div class="ey">GOPIZZA Analytics Hub</div>
+    <h1>Dashboard Hub</h1>
+    <p class="hd" data-i18n="hero.desc"></p>
+  </div>
+
+  <div class="ks" id="kpi-strip"></div>
+
+  <div class="ctrl">
+    <div class="sw">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="si" id="search" type="text" />
+    </div>
+    <div class="cps" id="chips"></div>
+    <select class="ss" id="sort">
+      <option value="default" data-i18n="sort.date"></option>
+      <option value="alpha"   data-i18n="sort.alpha"></option>
+    </select>
+  </div>
+
+  <div id="view"></div>
+
+  <footer>
+    <span class="fl">© 2025 GOPIZZA Strategic Planning · GO-Hub v1.2</span>
+    <span class="fb"><span class="fbd"></span><span data-i18n="footer.badge"></span></span>
+  </footer>
+</div>
+
+<!-- ── 등록 MODAL ── -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-banner">
+      <span class="modal-banner-title" data-i18n="modal.title"></span>
+      <button class="modal-close" id="btn-close-modal" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label" for="f-cat"><span data-i18n="form.cat"></span><span>*</span></label>
+        <select class="form-select" id="f-cat"></select>
+        <div class="form-errmsg" id="err-cat" style="display:none" data-i18n="err.cat"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="f-name"><span data-i18n="form.name"></span><span>*</span></label>
+        <input class="form-input" id="f-name" type="text" maxlength="80" />
+        <div class="form-errmsg" id="err-name" style="display:none" data-i18n="err.name"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="f-url">URL<span>*</span></label>
+        <input class="form-input" id="f-url" type="url" placeholder="https://" />
+        <div class="form-errmsg" id="err-url" style="display:none" data-i18n="err.url"></div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label" for="f-dept" data-i18n="form.dept"></label>
+          <input class="form-input" id="f-dept" type="text" maxlength="40" />
+        </div>
+        <div>
+          <label class="form-label" for="f-icon" data-i18n="form.icon"></label>
+          <input class="form-input" id="f-icon" type="text" placeholder="📊" maxlength="4" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="f-desc"><span data-i18n="form.desc"></span> <span style="font-weight:400;color:var(--gray-mid)" data-i18n="form.optional"></span></label>
+        <input class="form-input" id="f-desc" type="text" maxlength="120" />
+        <div class="form-hint" data-i18n="form.hint"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="btn-cancel" data-i18n="btn.cancel"></button>
+      <button class="btn-submit" id="btn-submit" data-i18n="btn.register"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 삭제 확인 MODAL ── -->
+<div class="del-overlay" id="del-overlay">
+  <div class="del-modal">
+    <div class="del-banner" data-i18n="del.title"></div>
+    <div class="del-body">
+      <span data-i18n="del.body"></span>
+      <span class="del-name" id="del-target-name">—</span>
+    </div>
+    <div class="del-footer">
+      <button class="btn-cancel" id="del-cancel" data-i18n="btn.cancel"></button>
+      <button class="btn-submit" id="del-confirm" style="background:var(--red);border-color:var(--red)" data-i18n="btn.delete"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   i18n  STRINGS
+══════════════════════════════════════════════ */
+const I18N = {
+  ko: {
+    'header.sub':    '통합 대시보드 허브',
+    'header.register':'대시보드 등록',
+    'hero.desc':     '전략·운영·재무·투자자 리포팅 등 GOPIZZA 전체 대시보드를 한곳에서 확인합니다.',
+    'kpi.total':     'Total',
+    'kpi.cats':      '카테고리',
+    'kpi.depts':     '부서',
+    'kpi.added':     '등록됨',
+    'search.ph':     '대시보드 이름·부서 검색…',
+    'chip.all':      '전체',
+    'sort.date':     '등록순',
+    'sort.alpha':    '가나다순',
+    'section.count': '개',
+    'footer.badge':  'localStorage 저장 · Airtable 연동 준비됨',
+    'modal.title':   '+ 대시보드 등록',
+    'form.cat':      '카테고리',
+    'form.name':     '대시보드 이름',
+    'form.dept':     '담당 부서',
+    'form.icon':     '아이콘 (이모지)',
+    'form.desc':     '설명',
+    'form.optional': '(선택)',
+    'form.hint':     '1–2문장 이내 핵심만 작성하세요.',
+    'err.cat':       '카테고리를 선택해 주세요.',
+    'err.name':      '이름을 입력해 주세요.',
+    'err.url':       '올바른 URL을 입력해 주세요.',
+    'btn.cancel':    '취소',
+    'btn.register':  '등록하기',
+    'btn.delete':    '삭제',
+    'del.title':     '삭제 확인',
+    'del.body':      '아래 대시보드를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+    'tag.added':     '등록',
+    'empty.title':   '등록된 대시보드가 없습니다',
+    'empty.desc':    '우측 상단 버튼을 눌러 첫 번째 대시보드를 추가해 보세요.',
+    'empty.btn':     '+ 대시보드 등록',
+    'empty.search':  '검색 결과 없음',
+    'empty.search2': '다른 키워드 또는 카테고리를 시도해 보세요.',
+    'nav.dash':      '개 대시보드',
+    'toast.added':   '등록 완료',
+    'toast.deleted': '삭제됨',
+    'name.ph':       '예: Malaysia Store KPI',
+    'dept.ph':       '예: Finance',
+  },
+  en: {
+    'header.sub':    'Integrated Dashboard Hub',
+    'header.register':'Add Dashboard',
+    'hero.desc':     'One place for all GOPIZZA dashboards — strategy, operations, finance, and investor reporting.',
+    'kpi.total':     'Total',
+    'kpi.cats':      'Categories',
+    'kpi.depts':     'Departments',
+    'kpi.added':     'Registered',
+    'search.ph':     'Search by name or department…',
+    'chip.all':      'All',
+    'sort.date':     'Date Added',
+    'sort.alpha':    'A → Z',
+    'section.count': '',
+    'footer.badge':  'localStorage · Airtable-ready',
+    'modal.title':   '+ Add Dashboard',
+    'form.cat':      'Category',
+    'form.name':     'Dashboard Name',
+    'form.dept':     'Department',
+    'form.icon':     'Icon (emoji)',
+    'form.desc':     'Description',
+    'form.optional': '(optional)',
+    'form.hint':     'Keep it to 1–2 sentences.',
+    'err.cat':       'Please select a category.',
+    'err.name':      'Please enter a name.',
+    'err.url':       'Please enter a valid URL.',
+    'btn.cancel':    'Cancel',
+    'btn.register':  'Add',
+    'btn.delete':    'Delete',
+    'del.title':     'Confirm Delete',
+    'del.body':      'Are you sure you want to delete this dashboard? This cannot be undone.',
+    'tag.added':     'Added',
+    'empty.title':   'No dashboards yet',
+    'empty.desc':    'Click the button in the top-right to add your first dashboard.',
+    'empty.btn':     '+ Add Dashboard',
+    'empty.search':  'No results found',
+    'empty.search2': 'Try a different keyword or category.',
+    'nav.dash':      ' dashboard',
+    'toast.added':   'Dashboard added',
+    'toast.deleted': 'Deleted',
+    'name.ph':       'e.g. Malaysia Store KPI',
+    'dept.ph':       'e.g. Finance',
+  }
+};
+
+/* ══════════════════════════════════════════════
+   CATEGORIES
+══════════════════════════════════════════════ */
+const CATEGORIES = [
+  "Global Performance",
+  "Store Level Performance",
+  "Financials",
+  "Investor Reporting",
+  "Strategy & Insights"
+];
+
+const STORAGE_KEY     = 'gohub_user_items';
+const STORAGE_KEY_LANG = 'gohub_lang';
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let lang            = localStorage.getItem(STORAGE_KEY_LANG) || 'ko';
+let activeCategory  = 'all';
+let pendingDeleteId = null;
+
+function t(key) { return (I18N[lang] && I18N[lang][key]) || key; }
+
+/* ══════════════════════════════════════════════
+   LANGUAGE
+══════════════════════════════════════════════ */
+function setLang(l) {
+  lang = l;
+  localStorage.setItem(STORAGE_KEY_LANG, l);
+  document.getElementById('btn-ko').classList.toggle('active', l==='ko');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+  document.documentElement.lang = l;
+  applyI18n();
+  rebuildChips();
+  render();
+}
+
+function applyI18n() {
+  // data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  // placeholders
+  document.getElementById('search').placeholder = t('search.ph');
+  document.getElementById('f-name').placeholder = t('name.ph');
+  document.getElementById('f-dept').placeholder = t('dept.ph');
+  // select options
+  document.querySelectorAll('option[data-i18n]').forEach(opt => {
+    opt.textContent = t(opt.getAttribute('data-i18n'));
+  });
+}
+
+/* ══════════════════════════════════════════════
+   STORAGE
+══════════════════════════════════════════════ */
+function loadItems() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveItems(items) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+/* ══════════════════════════════════════════════
+   KPI STRIP
+══════════════════════════════════════════════ */
+function buildKPI(items) {
+  const kpis = [
+    { num: items.length,                                                      label: t('kpi.total') },
+    { num: [...new Set(items.map(i=>i.category))].length,                    label: t('kpi.cats')  },
+    { num: [...new Set(items.map(i=>i.department).filter(Boolean))].length,  label: t('kpi.depts') },
+    { num: items.length,                                                      label: t('kpi.added') },
+  ];
+  document.getElementById('kpi-strip').innerHTML =
+    kpis.map(k=>`<div class="kc"><span class="kn">${k.num}</span><span class="kl">${k.label}</span></div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   CHIPS
+══════════════════════════════════════════════ */
+function rebuildChips() {
+  const c = document.getElementById('chips');
+  const prev = activeCategory;
+  c.innerHTML = '';
+
+  const all = document.createElement('button');
+  all.className = 'chip' + (prev==='all'?' active':'');
+  all.dataset.cat = 'all';
+  all.textContent = t('chip.all');
+  c.appendChild(all);
+
+  CATEGORIES.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (prev===cat?' active':'');
+    b.dataset.cat = cat;
+    b.textContent = cat;
+    c.appendChild(b);
+  });
+
+  c.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if(!b) return;
+    activeCategory = b.dataset.cat;
+    c.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    render();
+  });
+}
+
+/* ══════════════════════════════════════════════
+   CARD HTML
+══════════════════════════════════════════════ */
+function cardHTML(item, delay) {
+  return `
+    <div class="card" style="animation-delay:${delay*.04}s">
+      <div class="ct">
+        <div class="ci">${item.icon||'📌'}</div>
+        <div class="card-actions">
+          <button class="btn-del" title="${lang==='ko'?'삭제':'Delete'}"
+            onclick="openDelete('${item.id}','${item.name.replace(/'/g,"\\'")}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+          <a class="ca arrow" href="${item.url}" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 17 17 7M7 7h10v10"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      <a class="cn" href="${item.url}" target="_blank" rel="noopener">${item.name}</a>
+      ${item.description?`<div class="cd">${item.description}</div>`:''}
+      <div class="cf">
+        <span class="tag tu">${t('tag.added')}</span>
+        ${item.department?`<span class="tag td">${item.department}</span>`:''}
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════ */
+function render() {
+  const q     = document.getElementById('search').value.toLowerCase().trim();
+  const s     = document.getElementById('sort').value;
+  const all   = loadItems();
+
+  let items = all
+    .filter(i => activeCategory==='all' || i.category===activeCategory)
+    .filter(i => !q || [i.name,i.department||'',i.description||'',i.category].some(x=>x.toLowerCase().includes(q)));
+  if(s==='alpha') items=[...items].sort((a,b)=>a.name.localeCompare(b.name,lang));
+
+  buildKPI(all);
+
+  const total = items.length;
+  const suffix = lang==='en' ? `${total} dashboard${total!==1?'s':''}` : `${total}${t('nav.dash')}`;
+  document.getElementById('nav-count').textContent = suffix;
+
+  const view = document.getElementById('view');
+
+  // Empty state (no items registered at all)
+  if(all.length === 0) {
+    view.innerHTML = `
+      <div class="grid">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">${t('empty.title')}</div>
+          <div class="empty-desc">${t('empty.desc')}</div>
+          <button class="btn-empty-reg" onclick="openModal()">${t('empty.btn')}</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // No results from search/filter
+  if(!items.length) {
+    view.innerHTML = `
+      <div class="grid">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">${t('empty.search')}</div>
+          <div class="empty-desc">${t('empty.search2')}</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Grouped by section (전체 + no search)
+  if(activeCategory==='all' && !q) {
+    const grouped = {};
+    CATEGORIES.forEach(c=>{grouped[c]=[];});
+    items.forEach(i=>{ if(grouped[i.category]) grouped[i.category].push(i); });
+
+    let html='', si=1, cd=0;
+    CATEGORIES.forEach(cat => {
+      const g = grouped[cat];
+      if(!g || !g.length) return;
+      const countLabel = lang==='en' ? `${g.length}` : `${g.length}${t('section.count')}`;
+      html += `
+        <div class="sh">
+          <span class="sn">${String(si).padStart(2,'0')}</span>
+          <span class="st">${cat}</span>
+          <span class="sc">${countLabel}</span>
+        </div>
+        <div class="grid">${g.map(item=>cardHTML(item,cd++)).join('')}</div>`;
+      si++;
+    });
+    view.innerHTML = html;
+  } else {
+    // Flat grid
+    view.innerHTML = `<div class="grid">${items.map((item,i)=>cardHTML(item,i)).join('')}</div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   MODAL: REGISTER
+══════════════════════════════════════════════ */
+function openModal() {
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(()=>document.getElementById('f-cat').focus(), 120);
+}
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  clearForm();
+}
+function clearForm() {
+  ['f-cat','f-name','f-url','f-dept','f-icon','f-desc'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  clearErrors();
+}
+function clearErrors() {
+  ['f-cat','f-name','f-url'].forEach(id=>document.getElementById(id).classList.remove('err'));
+  ['err-cat','err-name','err-url'].forEach(id=>{ document.getElementById(id).style.display='none'; });
+}
+function validateForm() {
+  clearErrors(); let ok=true;
+  const cat  = document.getElementById('f-cat').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  const url  = document.getElementById('f-url').value.trim();
+  if(!cat)  { document.getElementById('f-cat').classList.add('err');  document.getElementById('err-cat').style.display='block';  ok=false; }
+  if(!name) { document.getElementById('f-name').classList.add('err'); document.getElementById('err-name').style.display='block'; ok=false; }
+  if(!url || !/^https?:\/\/.+/.test(url)) { document.getElementById('f-url').classList.add('err'); document.getElementById('err-url').style.display='block'; ok=false; }
+  return ok;
+}
+function submitForm() {
+  if(!validateForm()) return;
+  const item = {
+    id:          'u' + Date.now(),
+    category:    document.getElementById('f-cat').value.trim(),
+    name:        document.getElementById('f-name').value.trim(),
+    url:         document.getElementById('f-url').value.trim(),
+    department:  document.getElementById('f-dept').value.trim(),
+    icon:        document.getElementById('f-icon').value.trim() || '📌',
+    description: document.getElementById('f-desc').value.trim(),
+    addedAt:     new Date().toISOString().split('T')[0],
+  };
+  const items = loadItems();
+  items.push(item);
+  saveItems(items);
+  closeModal();
+  render();
+  showToast(`"${item.name}" ${t('toast.added')}`);
+}
+
+/* ══════════════════════════════════════════════
+   MODAL: DELETE
+══════════════════════════════════════════════ */
+function openDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('del-target-name').textContent = name;
+  document.getElementById('del-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDelete() {
+  pendingDeleteId = null;
+  document.getElementById('del-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function confirmDelete() {
+  if(!pendingDeleteId) return;
+  const name  = document.getElementById('del-target-name').textContent;
+  const items = loadItems().filter(i=>i.id !== pendingDeleteId);
+  saveItems(items);
+  closeDelete();
+  render();
+  showToast(`"${name}" ${t('toast.deleted')}`);
+}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+/* ══════════════════════════════════════════════
+   POPULATE CATEGORY SELECT
+══════════════════════════════════════════════ */
+function populateCatSelect() {
+  const sel = document.getElementById('f-cat');
+  sel.innerHTML = `<option value="">${lang==='ko'?'카테고리를 선택해 주세요':'Select a category'}</option>`;
+  CATEGORIES.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat; opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   EVENT WIRING
+══════════════════════════════════════════════ */
+document.getElementById('btn-open-modal').addEventListener('click', openModal);
+document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+document.getElementById('btn-cancel').addEventListener('click', closeModal);
+document.getElementById('btn-submit').addEventListener('click', submitForm);
+document.getElementById('del-cancel').addEventListener('click', closeDelete);
+document.getElementById('del-confirm').addEventListener('click', confirmDelete);
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target===document.getElementById('overlay')) closeModal(); });
+document.getElementById('del-overlay').addEventListener('click', e=>{ if(e.target===document.getElementById('del-overlay')) closeDelete(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('del-overlay').classList.contains('open')) closeDelete();
+    else if(document.getElementById('overlay').classList.contains('open')) closeModal();
+  }
+});
+['f-name','f-url','f-dept','f-icon','f-desc'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown', e=>{ if(e.key==='Enter') submitForm(); });
+});
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('sort').addEventListener('change', render);
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function init() {
+  // Set initial lang toggle state
+  document.getElementById('btn-ko').classList.toggle('active', lang==='ko');
+  document.getElementById('btn-en').classList.toggle('active', lang==='en');
+  document.documentElement.lang = lang;
+  applyI18n();
+  populateCatSelect();
+  rebuildChips();
+  render();
+}
+init();
+</script>
+</body>
+</html>
