@@ -91,6 +91,7 @@
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
     .card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:20px 20px 16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;transition:box-shadow var(--tr),border-color var(--tr),transform var(--tr);animation:fi .3s both;}
     @keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
     .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform var(--tr);border-radius:6px 0 0 6px;}
     .card:hover{border-color:#ccc;box-shadow:0 4px 20px rgba(0,0,0,.12);transform:translateY(-2px);}
     .card:hover::before{transform:scaleX(1);}
@@ -240,7 +241,7 @@
   <div id="view"></div>
 
   <footer>
-    <span class="fl">© 2025 GOPIZZA Strategic Planning · GO-Hub v1.2</span>
+    <span class="fl">© 2025 GOPIZZA Strategic Planning · GO-Hub v2.0</span>
     <span class="fb"><span class="fbd"></span><span data-i18n="footer.badge"></span></span>
   </footer>
 </div>
@@ -328,7 +329,7 @@ const I18N = {
     'sort.date':     '등록순',
     'sort.alpha':    '가나다순',
     'section.count': '개',
-    'footer.badge':  'localStorage 저장 · Airtable 연동 준비됨',
+    'footer.badge':  'Airtable 연동 · 60초 자동 갱신',
     'modal.title':   '+ 대시보드 등록',
     'form.cat':      '카테고리',
     'form.name':     '대시보드 이름',
@@ -370,7 +371,7 @@ const I18N = {
     'sort.date':     'Date Added',
     'sort.alpha':    'A → Z',
     'section.count': '',
-    'footer.badge':  'localStorage · Airtable-ready',
+    'footer.badge':  'Airtable connected · 60s auto-refresh',
     'modal.title':   '+ Add Dashboard',
     'form.cat':      'Category',
     'form.name':     'Dashboard Name',
@@ -455,15 +456,76 @@ function applyI18n() {
 }
 
 /* ══════════════════════════════════════════════
-   STORAGE
+   AIRTABLE API (replaces localStorage)
 ══════════════════════════════════════════════ */
+let _cachedItems = [];    // 메모리 캐시
+let _isLoading   = false;
+let _pollTimer   = null;
+
 function loadItems() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+  return _cachedItems;    // 동기 호출 — 캐시된 데이터 반환
 }
-function saveItems(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+
+async function fetchItemsFromAPI() {
+  try {
+    _isLoading = true;
+    const res = await fetch('/api/dashboard');
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    _cachedItems = data.dashboards || [];
+    render();
+  } catch (err) {
+    console.error('Fetch error:', err);
+    // API 실패 시 localStorage 폴백
+    try { _cachedItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch {}
+  } finally {
+    _isLoading = false;
+  }
 }
+
+async function addItemToAPI(item) {
+  try {
+    const res = await fetch('/api/dashboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+    if (!res.ok) throw new Error(`POST error: ${res.status}`);
+    await fetchItemsFromAPI();  // 전체 목록 새로고침
+    return true;
+  } catch (err) {
+    console.error('Add error:', err);
+    // 폴백: localStorage에 임시 저장
+    _cachedItems.push({ ...item, id: 'local_' + Date.now() });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(_cachedItems));
+    return false;
+  }
+}
+
+async function deleteItemFromAPI(id) {
+  try {
+    const res = await fetch(`/api/dashboard/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`DELETE error: ${res.status}`);
+    await fetchItemsFromAPI();
+    return true;
+  } catch (err) {
+    console.error('Delete error:', err);
+    // 폴백: 로컬에서만 제거
+    _cachedItems = _cachedItems.filter(i => i.id !== id);
+    return false;
+  }
+}
+
+// 60초마다 자동 갱신
+function startPolling() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = setInterval(fetchItemsFromAPI, 60000);
+}
+
+// 탭 포커스 시 즉시 갱신
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) fetchItemsFromAPI();
+});
 
 /* ══════════════════════════════════════════════
    KPI STRIP
@@ -566,15 +628,26 @@ function render() {
 
   // Empty state (no items registered at all)
   if(all.length === 0) {
-    view.innerHTML = `
-      <div class="grid">
-        <div class="empty-state">
-          <div class="empty-icon">📋</div>
-          <div class="empty-title">${t('empty.title')}</div>
-          <div class="empty-desc">${t('empty.desc')}</div>
-          <button class="btn-empty-reg" onclick="openModal()">${t('empty.btn')}</button>
-        </div>
-      </div>`;
+    if(_isLoading) {
+      view.innerHTML = `
+        <div class="grid">
+          <div class="empty-state">
+            <div class="empty-icon" style="animation:spin 1s linear infinite">⏳</div>
+            <div class="empty-title">${lang==='ko'?'Airtable에서 불러오는 중…':'Loading from Airtable…'}</div>
+            <div class="empty-desc">${lang==='ko'?'잠시만 기다려 주세요.':'Please wait a moment.'}</div>
+          </div>
+        </div>`;
+    } else {
+      view.innerHTML = `
+        <div class="grid">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">${t('empty.title')}</div>
+            <div class="empty-desc">${t('empty.desc')}</div>
+            <button class="btn-empty-reg" onclick="openModal()">${t('empty.btn')}</button>
+          </div>
+        </div>`;
+    }
     return;
   }
 
@@ -651,24 +724,30 @@ function validateForm() {
   if(!url || !/^https?:\/\/.+/.test(url)) { document.getElementById('f-url').classList.add('err'); document.getElementById('err-url').style.display='block'; ok=false; }
   return ok;
 }
-function submitForm() {
+async function submitForm() {
   if(!validateForm()) return;
   const item = {
-    id:          'u' + Date.now(),
     category:    document.getElementById('f-cat').value.trim(),
     name:        document.getElementById('f-name').value.trim(),
     url:         document.getElementById('f-url').value.trim(),
     department:  document.getElementById('f-dept').value.trim(),
     icon:        document.getElementById('f-icon').value.trim() || '📌',
     description: document.getElementById('f-desc').value.trim(),
-    addedAt:     new Date().toISOString().split('T')[0],
   };
-  const items = loadItems();
-  items.push(item);
-  saveItems(items);
+
+  // 버튼 로딩 상태
+  const btn = document.getElementById('btn-submit');
+  const orig = btn.textContent;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  const ok = await addItemToAPI(item);
+  btn.textContent = orig;
+  btn.disabled = false;
+
   closeModal();
   render();
-  showToast(`"${item.name}" ${t('toast.added')}`);
+  showToast(`"${item.name}" ${t('toast.added')}${ok ? '' : ' (offline)'}`);
 }
 
 /* ══════════════════════════════════════════════
@@ -685,14 +764,24 @@ function closeDelete() {
   document.getElementById('del-overlay').classList.remove('open');
   document.body.style.overflow = '';
 }
-function confirmDelete() {
+async function confirmDelete() {
   if(!pendingDeleteId) return;
-  const name  = document.getElementById('del-target-name').textContent;
-  const items = loadItems().filter(i=>i.id !== pendingDeleteId);
-  saveItems(items);
+  const name = document.getElementById('del-target-name').textContent;
+  const id   = pendingDeleteId;
+
+  // 버튼 로딩 상태
+  const btn = document.getElementById('del-confirm');
+  const orig = btn.textContent;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  const ok = await deleteItemFromAPI(id);
+
+  btn.textContent = orig;
+  btn.disabled = false;
   closeDelete();
   render();
-  showToast(`"${name}" ${t('toast.deleted')}`);
+  showToast(`"${name}" ${t('toast.deleted')}${ok ? '' : ' (offline)'}`);
 }
 
 /* ══════════════════════════════════════════════
@@ -746,7 +835,7 @@ document.getElementById('sort').addEventListener('change', render);
 /* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
-function init() {
+async function init() {
   // Set initial lang toggle state
   document.getElementById('btn-ko').classList.toggle('active', lang==='ko');
   document.getElementById('btn-en').classList.toggle('active', lang==='en');
@@ -754,7 +843,13 @@ function init() {
   applyI18n();
   populateCatSelect();
   rebuildChips();
-  render();
+  render();  // 빈 상태 먼저 보여주기
+
+  // Airtable에서 데이터 로드
+  await fetchItemsFromAPI();
+
+  // 60초 자동 갱신 시작
+  startPolling();
 }
 init();
 </script>
