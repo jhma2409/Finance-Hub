@@ -1,5 +1,5 @@
 // ============================================================
-// api/dashboard.js — Vercel Serverless Function
+// api/dashboard.js — Vercel Serverless Function (v2.1)
 // ============================================================
 // GET  /api/dashboard  → Airtable에서 전체 목록 가져오기
 // POST /api/dashboard  → Airtable에 새 대시보드 추가
@@ -33,16 +33,14 @@ module.exports = async (req, res) => {
       let offset = null;
 
       do {
-        const params = new URLSearchParams({
-          pageSize: '100',
-        });
+        const params = new URLSearchParams({ pageSize: '100' });
         if (offset) params.set('offset', offset);
 
         const r = await fetch(`${BASE_URL}?${params}`, { headers });
         if (!r.ok) {
           const errBody = await r.text();
           console.error('Airtable GET error:', r.status, errBody);
-          throw new Error(`Airtable GET error: ${r.status} - ${errBody}`);
+          throw new Error(`Airtable GET error: ${r.status}`);
         }
         const data = await r.json();
         allRecords = allRecords.concat(data.records);
@@ -69,10 +67,13 @@ module.exports = async (req, res) => {
       const { name, category, url, description, department, icon } = req.body;
       if (!name) return res.status(400).json({ error: 'Name is required' });
 
+      // ⚠️ typecast: true → Airtable이 자동으로 single-select 옵션을 생성/변환
+      // SortOrder 필드는 제거 (없는 필드 전송 시 422 에러)
       const r = await fetch(BASE_URL, {
         method: 'POST',
         headers,
         body: JSON.stringify({
+          typecast: true,
           records: [{
             fields: {
               Name:        name,
@@ -90,7 +91,10 @@ module.exports = async (req, res) => {
       if (!r.ok) {
         const err = await r.text();
         console.error('Airtable POST error:', r.status, err);
-        throw new Error(`Airtable POST error: ${r.status}`);
+        return res.status(r.status).json({
+          error: `Airtable POST error: ${r.status}`,
+          detail: err
+        });
       }
 
       const data = await r.json();
