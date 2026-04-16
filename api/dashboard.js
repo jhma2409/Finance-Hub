@@ -7,7 +7,7 @@
 
 const TOKEN   = process.env.AIRTABLE_TOKEN;
 const BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE   = 'Dashboards';
+const TABLE   = process.env.AIRTABLE_TABLE_NAME || 'Dashboards';
 const BASE_URL = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE)}`;
 
 const headers = {
@@ -34,14 +34,16 @@ module.exports = async (req, res) => {
 
       do {
         const params = new URLSearchParams({
-          'sort[0][field]': 'SortOrder',
-          'sort[0][direction]': 'asc',
           pageSize: '100',
         });
         if (offset) params.set('offset', offset);
 
         const r = await fetch(`${BASE_URL}?${params}`, { headers });
-        if (!r.ok) throw new Error(`Airtable GET error: ${r.status}`);
+        if (!r.ok) {
+          const errBody = await r.text();
+          console.error('Airtable GET error:', r.status, errBody);
+          throw new Error(`Airtable GET error: ${r.status} - ${errBody}`);
+        }
         const data = await r.json();
         allRecords = allRecords.concat(data.records);
         offset = data.offset || null;
@@ -49,13 +51,13 @@ module.exports = async (req, res) => {
 
       const dashboards = allRecords.map(rec => ({
         id:          rec.id,
-        name:        rec.fields.Name        || '',
-        category:    rec.fields.Category    || '',
-        url:         rec.fields.URL         || '',
-        description: rec.fields.Description || '',
-        department:  rec.fields.Department  || '',
-        icon:        rec.fields.Icon        || '📌',
-        addedAt:     rec.fields.DateAdded   || rec.createdTime?.split('T')[0] || '',
+        name:        rec.fields.Name        || rec.fields.name        || '',
+        category:    rec.fields.Category    || rec.fields.category    || '',
+        url:         rec.fields.URL         || rec.fields.Url         || rec.fields.url || '',
+        description: rec.fields.Description || rec.fields.description || '',
+        department:  rec.fields.Department  || rec.fields.department  || '',
+        icon:        rec.fields.Icon        || rec.fields.icon        || '📌',
+        addedAt:     rec.fields.DateAdded   || rec.fields.Date        || rec.createdTime?.split('T')[0] || '',
       }));
 
       res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
@@ -79,7 +81,6 @@ module.exports = async (req, res) => {
               Description: description || '',
               Department:  department  || '',
               Icon:        icon        || '📌',
-              SortOrder:   999,
               DateAdded:   new Date().toISOString().split('T')[0],
             }
           }]
@@ -88,7 +89,8 @@ module.exports = async (req, res) => {
 
       if (!r.ok) {
         const err = await r.text();
-        throw new Error(`Airtable POST error: ${r.status} ${err}`);
+        console.error('Airtable POST error:', r.status, err);
+        throw new Error(`Airtable POST error: ${r.status}`);
       }
 
       const data = await r.json();
